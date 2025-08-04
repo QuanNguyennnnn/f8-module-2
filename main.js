@@ -1,5 +1,7 @@
 import httpRequest from "./utils/httpRequest.js";
 import endpoints from "./utils/endpoints.js";
+import toast from './utils/toast.js';
+import { getItemStorage, setItemStorage } from "./utils/storage.js";
 
 // Auth Modal Functionality
 document.addEventListener("DOMContentLoaded", function () {
@@ -17,6 +19,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function showSignupForm() {
         signupForm.style.display = "block";
         loginForm.style.display = "none";
+    }
+
+    // Function to hide signup form
+    function hideSignupForm() {
+        signupForm.style.display = "none";
     }
 
     // Function to show login form
@@ -80,24 +87,83 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         const email = document.querySelector("#signupEmail").value;
         const password = document.querySelector("#signupPassword").value;
-       
+
         const credentials = {
             email,
             password,
         };
-        
+
         try {
-            const { user, access_token } = await httpRequest.post(endpoints.authRegister, credentials);
-            localStorage.setItem('accessToken', access_token);
-            localStorage.setItem("currentUser", user);
-            updateCurrentUser(user);
+            const { user, access_token, message } = await httpRequest.post(endpoints.authRegister, credentials);
+
+            if (user) {
+                toast({
+                    text: message,
+                    type: "success"
+                });
+
+                setItemStorage("accessToken", access_token);
+                setItemStorage("currentUser", user);
+
+                // chuyển sang form đăng nhập
+                hideSignupForm();
+                showLoginForm();
+            }
+
+
         } catch (error) {
-            if(error?.response?.error?.code === "EMAIL_EXISTS") {
-                console.log(error.response.error.message);
-                
+            const errorCode = error?.response?.error?.code;
+            const errorMessage = error?.response?.error?.message;
+
+            if (errorCode === "EMAIL_EXISTS") {
+                toast({
+                    text: errorMessage,
+                    type: "error"
+                });
             }
         }
     });
+
+    loginForm.querySelector(".auth-form-content").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const email = document.querySelector("#loginEmail").value;
+        const password = document.querySelector("#loginPassword").value;
+        const authButton = document.querySelector(".auth-buttons");
+        const userInfo = document.querySelector(".user-info");
+
+        const credentials = {
+            email,
+            password,
+        };
+
+        try {
+            const { user, access_token, message } = await httpRequest.post(endpoints.authLogin, credentials);
+
+            if (user) {
+
+                toast({
+                    text: message,
+                    type: "success"
+                });
+
+                closeModal();
+
+                setItemStorage("accessToken", access_token);
+                setItemStorage("currentUser", user);
+
+                authButton.classList.remove("show");
+                userInfo.classList.add("show");
+
+                updateCurrentUser(user);
+            }
+
+        } catch (error) {
+            consolog.log("error:", error);
+        }
+
+    });
+
 });
 
 // User Menu Dropdown Functionality
@@ -144,25 +210,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     const authButton = document.querySelector(".auth-buttons");
     const userInfo = document.querySelector(".user-info");
 
-    
-
     try {
-        const {user} = await httpRequest.get('users/me');
+        const { user } = await httpRequest.get('users/me');
         updateCurrentUser(user);
         userInfo.classList.add("show");
     } catch (error) {
         authButton.classList.add("show");
     }
+});
 
-    function updateCurrentUser(user) {
-        const userName = document.querySelector("#user-name");
-        const userAvatar = document.querySelector("#user-avatar");
+function updateCurrentUser(user) {
+    console.log("user", user);
+    const userName = document.querySelector("#user-name");
+    const userAvatar = document.querySelector("#user-avatar");
 
-        if(user.avatar_url) {
-            userAvatar.src = user.avatar_url;
-        }
-        if(user.email) {
-            userName.textContent = user.email.split('@')[0]; // Hiển thị username từ email
-        }
+    if (user.avatar_url) {
+        userAvatar.src = user.avatar_url;
     }
+    if (user.email) {
+        userName.textContent = user.email.split('@')[0]; // Hiển thị username từ email
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const user = getItemStorage("currentUser");
+    const userAvatar = document.querySelector("#user-avatar");
+    const userInfo = document.querySelector(".user-info");
+    const authButton = document.querySelector(".auth-buttons");
+
+    if (user) {
+        userInfo.classList.add("show");
+        authButton.classList.remove("show");
+        userAvatar.src = user.avatar_url;
+    }
+
+    tippy('.user-avatar', {
+        content: user.display_name,
+    });
 });
