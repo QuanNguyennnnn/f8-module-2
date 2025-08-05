@@ -129,9 +129,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const email = document.querySelector("#loginEmail").value;
         const password = document.querySelector("#loginPassword").value;
-        const authButton = document.querySelector(".auth-buttons");
-        const userInfo = document.querySelector(".user-info");
-
         const credentials = {
             email,
             password,
@@ -139,7 +136,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             const { user, access_token, message } = await httpRequest.post(endpoints.authLogin, credentials);
-
             if (user) {
                 toast({
                     text: message,
@@ -149,7 +145,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 setItemStorage("accessToken", access_token);
                 setItemStorage("currentUser", user);
 
-                updateCurrentUser(user);
+                // Cập nhật giao diện
+                renderAuthUI();
+
+                // Đong modal
+                closeModal();
 
                 // Ẩn login/signup, hiện avatar
                 document.querySelector(".auth-buttons").style.display = "none";
@@ -170,9 +170,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // User Menu Dropdown Functionality
 document.addEventListener("DOMContentLoaded", function () {
-    const userAvatar = document.getElementById("userAvatar");
+    const userAvatar = document.getElementById("user-avatar");
     const userDropdown = document.getElementById("userDropdown");
     const logoutBtn = document.getElementById("logoutBtn");
+
+    if (!userAvatar || !userDropdown || !logoutBtn) {
+        console.error("User avatar or dropdown elements not found.");
+        return;
+    }
 
     // Toggle dropdown when clicking avatar
     userAvatar.addEventListener("click", function (e) {
@@ -202,57 +207,59 @@ document.addEventListener("DOMContentLoaded", function () {
         // Close dropdown first
         userDropdown.classList.remove("show");
 
+        // Xử lý đăng xuất
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("currentUser");
+        renderAuthUI(); // Cập nhật giao diện sau khi đăng xuất
+
         console.log("Logout clicked");
         // TODO: Students will implement logout logic here
     });
 });
 
 // Fetch và hiển thị thông tin người dùng
-document.addEventListener("DOMContentLoaded", async () => {
-    const authButton = document.querySelector(".auth-buttons");
-    const userInfo = document.querySelector(".user-info");
-
-    try {
-        const { user } = await httpRequest.get('users/me');
-        updateCurrentUser(user);
-        userInfo.classList.add("show");
-    } catch (error) {
-        authButton.classList.add("show");
-    }
-});
-
 function updateCurrentUser(user) {
     console.log("user", user);
     const userName = document.querySelector("#user-name");
     const userAvatar = document.querySelector("#user-avatar");
 
-    if (user.avatar_url) {
+    if (user.avatar_url && userAvatar) {
         userAvatar.src = user.avatar_url;
     }
-    if (user.email) {
+    if (user.email && userName) {
         userName.textContent = user.email.split('@')[0]; // Hiển thị username từ email
     }
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    const user = getItemStorage("currentUser");
-    const userAvatar = document.querySelector("#user-avatar");
-    const userInfo = document.querySelector(".user-info");
-    const authButton = document.querySelector(".auth-buttons");
-
-    // Hiển thị thông tin người dùng nếu đã đăng nhập
-    if (user) {
-        updateCurrentUser(user);
-        userInfo.classList.add("show");
-        authButton.classList.remove("show");
-        userAvatar.src = user.avatar_url;
-
-        //Hiển thị tên người dùng khi hover vào avatar
-        tippy('#user-avatar', {
-        content: user.display_name || user.email || 'User' ,
-    });
-    } else {
-        authButton.classList.add("show");
-        userInfo.classList.remove("show");
+//Hàm cập nhật giao diện theo trạng thái đăng nhập
+    function renderAuthUI() {
+        const user = getItemStorage("currentUser");
+        const authButton = document.querySelector(".auth-buttons");
+        const userInfo = document.querySelector(".user-info");
+        if(user) {
+            updateCurrentUser(user);
+            if (userInfo) {
+                userInfo.style.display = "flex";                
+            }
+            if (authButton) {
+                authButton.style.display = "none";
+            }
+            //Tooltip tên user
+            tippy('#user-avatar', {
+                content: user.display_name || user.email || 'User',
+            });
+        } else {
+            if (userInfo) {
+                userInfo.style.display = "none";
+            }
+            if (authButton) {
+                authButton.style.display = "flex";
+            }
+        }
     }
+
+
+// Render authentication UI on page load
+document.addEventListener("DOMContentLoaded", function () {
+    renderAuthUI();
 });
