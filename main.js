@@ -258,6 +258,26 @@ function updateCurrentUser(user) {
         }
     }
 
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.toggle-password').forEach(function (eyeIcon) {
+        eyeIcon.addEventListener('click', function () {
+            const inputId = this.getAttribute('data-target');
+            const inputField = document.getElementById(inputId);
+            const icon = eyeIcon.querySelector('i');
+            if(inputField) {
+                if (inputField.type === 'password') {
+                    inputField.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');    
+                } else {
+                    inputField.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        });
+    });
+});
 
 // Render authentication UI on page load
 document.addEventListener("DOMContentLoaded", function () {

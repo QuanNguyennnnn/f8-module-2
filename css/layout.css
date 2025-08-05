@@ -125,6 +125,29 @@
     overflow-y: auto;
 }
 
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+.password-wrapper .form-input {
+    width: 100%;
+    padding-right: 36px; /* Để tránh icon đè lên chữ */
+    box-sizing: border-box;
+}
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    font-size: 18px;
+    z-index: 2;
+    height: 24px;
+    display: flex;
+    align-items: center;
+}
+
 /* Player */
 .player {
     grid-area: player;
