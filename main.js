@@ -141,29 +141,31 @@ document.addEventListener("DOMContentLoaded", function () {
             const { user, access_token, message } = await httpRequest.post(endpoints.authLogin, credentials);
 
             if (user) {
-
                 toast({
                     text: message,
                     type: "success"
                 });
 
-                closeModal();
-
                 setItemStorage("accessToken", access_token);
                 setItemStorage("currentUser", user);
 
-                authButton.classList.remove("show");
-                userInfo.classList.add("show");
-
                 updateCurrentUser(user);
+
+                // Ẩn login/signup, hiện avatar
+                document.querySelector(".auth-buttons").style.display = "none";
+                document.querySelector(".user-info").style.display = "flex";
+
+                // Tooltip tên user
+                tippy('#user-avatar', {
+                    content: user.display_name || user.email || 'User',
+                });
+                // Đóng modal
+                closeModal();
             }
-
         } catch (error) {
-            consolog.log("error:", error);
+            toast({ text: "Login failed. Please check your credentials.", type: "error" });
         }
-
     });
-
 });
 
 // User Menu Dropdown Functionality
@@ -232,19 +234,25 @@ function updateCurrentUser(user) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async () => {
     const user = getItemStorage("currentUser");
     const userAvatar = document.querySelector("#user-avatar");
     const userInfo = document.querySelector(".user-info");
     const authButton = document.querySelector(".auth-buttons");
 
+    // Hiển thị thông tin người dùng nếu đã đăng nhập
     if (user) {
+        updateCurrentUser(user);
         userInfo.classList.add("show");
         authButton.classList.remove("show");
         userAvatar.src = user.avatar_url;
-    }
 
-    tippy('.user-avatar', {
-        content: user.display_name,
+        //Hiển thị tên người dùng khi hover vào avatar
+        tippy('#user-avatar', {
+        content: user.display_name || user.email || 'User' ,
     });
+    } else {
+        authButton.classList.add("show");
+        userInfo.classList.remove("show");
+    }
 });
