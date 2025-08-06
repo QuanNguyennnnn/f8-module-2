@@ -148,9 +148,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Cập nhật giao diện
                 renderAuthUI();
 
-                // Đong modal
-                closeModal();
-
                 // Ẩn login/signup, hiện avatar
                 document.querySelector(".auth-buttons").style.display = "none";
                 document.querySelector(".user-info").style.display = "flex";
