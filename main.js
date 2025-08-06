@@ -280,3 +280,38 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     renderAuthUI();
 });
+
+async function fetchAndRenderArtists() {
+  try {
+    const res = await httpRequest.get('/artists?limit=20&offset=0');
+    const artists = res.artists;
+
+    // Tìm tới phần HTML để gắn dữ liệu
+    const artistsGrid = document.querySelector('.artists-section .artists-grid');
+    artistsGrid.innerHTML = ''; 
+
+    // Duyệt qua từng nghệ sĩ
+    artists.forEach(artist => {
+      const card = document.createElement('div');
+      card.className = 'artist-card';
+      card.innerHTML = `
+        <div class="artist-card-cover">
+          <img src="${artist.image_url}" alt="${artist.name}" />
+          <button class="artist-play-btn">
+            <i class="fas fa-play"></i>
+          </button>
+        </div>
+        <div class="artist-card-info">
+          <h3 class="artist-card-name">${artist.name}</h3>
+          <p class="artist-card-type">Artist</p>
+        </div>
+      `;
+      artistsGrid.appendChild(card);
+    });
+
+  } catch (error) {
+    console.error('Lỗi khi fetch nghệ sĩ:', error);
+  }
+}
+
+fetchAndRenderArtists();
