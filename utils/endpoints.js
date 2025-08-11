@@ -4,6 +4,9 @@ const endpoints = {
     logout: '/auth/logout',
     userMe: '/users/me',
     artists: '/artists',
+    playlists: '/playlists',
+    playlistsById: (id) => `/playlists/${id}`,
+    playlistsByTracks: (id) => `/playlists/${id}/tracks`,
 }
 
 export default endpoints;

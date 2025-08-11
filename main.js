@@ -281,97 +281,101 @@ document.addEventListener("DOMContentLoaded", function () {
     renderAuthUI();
 });
 
-// =================== ARTISTS (Popular) + HERO ===================
-
-// Fetch & render danh sách nghệ sĩ vào grid hiện có
-async function fetchArtists(limit = 20, offset = 0) {
-  const grid = document.querySelector('.artists-section .artists-grid');
-  if (!grid) return;
-
-  // Xóa mọi thẻ demo cứng trong HTML (nếu còn)
-  grid.innerHTML = '';
-
-  // Skeleton đơn giản khi đang tải (không bắt buộc)
-  grid.innerHTML = Array.from({ length: 8 })
-    .map(
-      () =>
-        `<div class="artist-card" style="height:220px;border-radius:12px;background:linear-gradient(90deg,#2a2a2a 25%,#333 37%,#2a2a2a 63%);background-size:400% 100%;animation:shine 1.1s infinite"></div>`
-    )
-    .join('');
-
-  try {
-    // Gọi API lấy artists
-    const res = await httpRequest.get(`/artists?limit=${limit}&offset=${offset}`);
-    const artists = res?.artists ?? [];
-
-    grid.innerHTML = '';
-    artists.forEach((artist) => grid.appendChild(createArtistCard(artist)));
-
-    // Lần đầu: set hero = artist đầu tiên
-    if (artists.length) updateArtistHero(artists[0]);
-  } catch (err) {
-    console.error('Fetch artists error:', err);
-    grid.innerHTML = `<p style="color:var(--text-secondary)">Không tải được danh sách nghệ sĩ.</p>`;
-  }
+// ======================= HOME DATA =======================
+// Helpers (UI)
+function safeText(t, fallback = "Unknown") {
+  return (typeof t === "string" && t.trim()) ? t : fallback;
+}
+function imgOrPlaceholder(url, size = 160) {
+  return url || `placeholder.svg?height=${size}&width=${size}`;
 }
 
-// Tạo card nghệ sĩ
-function createArtistCard(artist) {
-  const card = document.createElement('div');
-  card.className = 'artist-card';
+// Playlist card (Today's biggest hits)
+function createHitCard(playlist) {
+  const cover = imgOrPlaceholder(playlist?.image_url, 160);
+  const title = safeText(playlist?.name, "Untitled");
+  const sub = safeText(playlist?.owner?.display_name || playlist?.owner_name || "Playlist", "Playlist");
 
-  card.innerHTML = `
-    <div class="artist-card-cover" style="border-radius:50%;overflow:hidden;position:relative;">
-      <img loading="lazy" src="${artist.image_url}" alt="${artist.name}" />
-      <button class="artist-play-btn" aria-label="Play ${artist.name}">
-        <i class="fas fa-play"></i>
-      </button>
+  const div = document.createElement("div");
+  div.className = "hit-card";
+  div.innerHTML = `
+    <div class="hit-card-cover">
+      <img src="${cover}" alt="${title}" />
+      <button class="hit-play-btn"><i class="fas fa-play"></i></button>
+    </div>
+    <div class="hit-card-info">
+      <h3 class="hit-card-title">${title}</h3>
+      <p class="hit-card-artist">${sub}</p>
+    </div>
+  `;
+  return div;
+}
+
+// Artist card (Popular artists)
+function createArtistCard(artist) {
+  const cover = imgOrPlaceholder(artist?.image_url, 160);
+  const name = safeText(artist?.name, "Unknown Artist");
+
+  const div = document.createElement("div");
+  div.className = "artist-card";
+  div.innerHTML = `
+    <div class="artist-card-cover">
+      <img src="${cover}" alt="${name}" />
+      <button class="artist-play-btn"><i class="fas fa-play"></i></button>
     </div>
     <div class="artist-card-info">
-      <h3 class="artist-card-name" title="${artist.name}">${artist.name}</h3>
+      <h3 class="artist-card-name">${name}</h3>
       <p class="artist-card-type">Artist</p>
     </div>
   `;
-
-  // Click card -> cập nhật hero
-  card.addEventListener('click', () => updateArtistHero(artist));
-
-  // Chặn nổi bọt khi bấm nút play (sau này gắn player thật)
-  card.querySelector('.artist-play-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    // TODO: play nhạc của artist (nếu có player)
-  });
-
-  return card;
+  return div;
 }
 
-// Cập nhật Hero theo artist
-function updateArtistHero(artist) {
-  const hero = document.querySelector('.artist-hero');
-  if (!hero) return;
-
-  const img = hero.querySelector('.hero-image');
-  const name = hero.querySelector('.artist-name');
-  const listeners = hero.querySelector('.monthly-listeners');
-  const verified = hero.querySelector('.verified-badge');
-
-  if (img) {
-    img.src = artist.background_image_url || artist.image_url;
-    img.alt = `${artist.name} artist background`;
+// Fetchers
+async function fetchPlaylists(limit = 20, offset = 0) {
+  try {
+    const res = await httpRequest.get(`${endpoints.playlists}?limit=${limit}&offset=${offset}`);
+    // API có thể trả về { playlists: [...] } hoặc mảng trực tiếp
+    return Array.isArray(res) ? res : (res?.playlists ?? []);
+  } catch (_) {
+    return [];
   }
-  if (name) name.textContent = artist.name || 'Artist';
-  if (listeners) {
-    const count = Number(artist.monthly_listeners || 0).toLocaleString();
-    listeners.textContent = `${count} monthly listeners`;
-  }
-  if (verified) verified.style.display = artist.is_verified ? 'flex' : 'none';
 }
 
-// Khởi động: chỉ gọi Popular artists
-document.addEventListener('DOMContentLoaded', () => {
-  // Dọn grid trước khi render (nếu còn phần cứng)
-  const grid = document.querySelector('.artists-section .artists-grid');
-  if (grid) grid.innerHTML = '';
+async function fetchArtists(limit = 20, offset = 0) {
+  try {
+    const res = await httpRequest.get(`${endpoints.artists}?limit=${limit}&offset=${offset}`);
+    // API của bạn đang trả về { artists: [...] }
+    return Array.isArray(res) ? res : (res?.artists ?? []);
+  } catch (_) {
+    return [];
+  }
+}
 
-  fetchArtists();
+// Renderers
+async function renderTodaysBiggestHits() {
+  const container = document.querySelector(".hits-grid");
+  if (!container) return;
+
+  container.innerHTML = ""; // clear mẫu tĩnh
+  const playlists = await fetchPlaylists(20, 0);
+  // Lấy 6 cái đầu để đúng layout như ảnh yêu cầu
+  playlists.slice(0, 6).forEach((pl) => container.appendChild(createHitCard(pl)));
+}
+
+async function renderPopularArtists() {
+  const container = document.querySelector(".artists-grid");
+  if (!container) return;
+
+  container.innerHTML = ""; // clear mẫu tĩnh
+  const artists = await fetchArtists(20, 0);
+  // Lấy 5 nghệ sĩ đầu cho đúng layout
+  artists.slice(0, 5).forEach((a) => container.appendChild(createArtistCard(a)));
+}
+
+// Boot
+document.addEventListener("DOMContentLoaded", () => {
+  // gọi cùng lúc, không chờ nhau
+  renderTodaysBiggestHits();
+  renderPopularArtists();
 });
