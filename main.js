@@ -290,6 +290,8 @@ function imgOrPlaceholder(url, size = 160) {
   return url || `placeholder.svg?height=${size}&width=${size}`;
 }
 
+const toHttps = (u) => (typeof u === "string" ? u.replace(/^http:\/\//i, "https://") : u);
+
 // Playlist card (Today's biggest hits)
 function createHitCard(playlist) {
   const cover = imgOrPlaceholder(playlist?.image_url, 160);
@@ -331,6 +333,22 @@ function createArtistCard(artist) {
   return div;
 }
 
+//Update Hero Section
+function updateArtistHero(a) {
+  if (!a) return;
+  const name = document.querySelector(".artist-name");
+  const mons = document.querySelector(".monthly-listeners");
+  if (name) name.textContent = a.name || "Unknown Artist";
+  if (mons) mons.textContent = `${Number(a.monthly_listeners || 0).toLocaleString("en-US")} monthly listeners`;
+
+  const url = toHttps(a.background_image_url || a.image_url) || "placeholder.svg";
+  const heroBg = document.querySelector(".artist-hero");
+  if (heroBg) heroBg.style.backgroundImage = `url("${url}")`;
+  const heroImg = document.querySelector(".hero-image");
+  if (heroImg) { heroImg.src = url; heroImg.alt = a.name || "Artist"; }
+}
+
+
 // Fetchers
 async function fetchPlaylists(limit = 20, offset = 0) {
   try {
@@ -363,14 +381,14 @@ async function renderTodaysBiggestHits() {
   playlists.slice(0, 6).forEach((pl) => container.appendChild(createHitCard(pl)));
 }
 
+let POPULAR = [];
 async function renderPopularArtists() {
-  const container = document.querySelector(".artists-grid");
-  if (!container) return;
-
-  container.innerHTML = ""; // clear mẫu tĩnh
-  const artists = await fetchArtists(20, 0);
-  // Lấy 5 nghệ sĩ đầu cho đúng layout
-  artists.slice(0, 5).forEach((a) => container.appendChild(createArtistCard(a)));
+  const c = document.querySelector(".artists-grid"); if (!c) return;
+  POPULAR = (await fetchArtists(20, 0)).slice(0, 5);
+  c.innerHTML = "";
+  POPULAR.forEach((a, i) => { const card = createArtistCard(a); card.dataset.i = i; c.appendChild(card); });
+  c.onclick = (e) => { const el = e.target.closest(".artist-card"); if (!el) return; updateArtistHero(POPULAR[+el.dataset.i]); };
+  if (POPULAR.length) updateArtistHero(POPULAR[0]); // auto fill hero
 }
 
 // Boot
