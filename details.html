@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Artist Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- dùng lại CSS của bạn -->
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+</head>
+<body>
+  <div class="page">
+    <!-- Header có icon Home -->
+    <div class="header">
+      <div class="home-btn">
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- Artist Hero -->
+    <section class="artist-hero" style="background-image: url('');">
+      <img class="hero-image" src="" alt="Artist"/>
+      <div class="hero-info">
+        <p style="margin:0;opacity:.9">Verified Artist</p>
+        <h1 class="artist-name">Artist name</h1>
+        <p class="monthly-listeners">0 monthly listeners</p>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="artist-controls">
+      <button class="play-btn"><i class="fa-solid fa-play"></i> Play</button>
+      <button class="play-btn"><i class="fa-regular fa-heart"></i> Follow</button>
+      <button class="play-btn"><i class="fa-solid fa-ellipsis"></i></button>
+    </section>
+
+    <!-- Popular tracks -->
+    <section class="popular-section">
+      <h2 class="section-title">Popular</h2>
+      <div class="track-list"></div>
+    </section>
+  </div>
+
+  <!-- Toastify -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Script  -->
+  <script type="module" src="./utils/details.js"></script>
+</body>
+</html>

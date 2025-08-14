@@ -5,8 +5,9 @@ const endpoints = {
     userMe: '/users/me',
     artists: '/artists',
     playlists: '/playlists',
+    artistsById:   (id) => `/artists/${id}`,
+    artistTopTracks:(id) => `/artists/${id}/top-tracks`,
     playlistsById: (id) => `/playlists/${id}`,
-    playlistsByTracks: (id) => `/playlists/${id}/tracks`,
 }
 
-export default endpoints;
+export default endpoints;   

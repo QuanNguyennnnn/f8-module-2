@@ -1,0 +1,40 @@
+ /* Nếu thiếu style, bạn có thể bổ sung tối thiểu thế này */
+    .page { padding: 16px; }
+    .artist-hero {
+      position: relative;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+      min-height: 260px;
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 16px;
+      padding: 16px;
+      color: #fff;
+    }
+    .artist-hero .hero-image {
+      width: 160px; height: 160px; border-radius: 8px; object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.2);
+    }
+    .artist-hero .artist-name { font-size: 32px; margin: 0 0 8px; }
+    .artist-hero .monthly-listeners { opacity: 0.9; }
+
+    .artist-controls { display: flex; gap: 12px; margin: 16px 0 8px; align-items: center; }
+    .artist-controls .play-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 999px; border: none; cursor: pointer;
+    }
+
+    .popular-section { margin-top: 8px; }
+    .popular-section .section-title { font-size: 20px; margin: 12px 0; }
+    .track-item {
+      display: grid; grid-template-columns: 32px 56px 1fr 120px 72px 40px;
+      gap: 12px; align-items: center; padding: 8px 12px; border-radius: 10px;
+    }
+    .track-item:hover { background: rgba(255,255,255,0.06); }
+    .track-image img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; }
+    .track-name { font-weight: 600; }
+    .track-plays, .track-duration { text-align: right; opacity: 0.9; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .home-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }

@@ -320,6 +320,8 @@ function createArtistCard(artist) {
 
   const div = document.createElement("div");
   div.className = "artist-card";
+  div.dataset.id = artist.id;  // lưu id vào data-attribute
+
   div.innerHTML = `
     <div class="artist-card-cover">
       <img src="${cover}" alt="${name}" />
@@ -348,8 +350,7 @@ function updateArtistHero(a) {
   if (heroImg) { heroImg.src = url; heroImg.alt = a.name || "Artist"; }
 }
 
-
-// Fetchers
+// Fetch Data
 async function fetchPlaylists(limit = 20, offset = 0) {
   try {
     const res = await httpRequest.get(`${endpoints.playlists}?limit=${limit}&offset=${offset}`);
@@ -370,7 +371,7 @@ async function fetchArtists(limit = 20, offset = 0) {
   }
 }
 
-// Renderers
+// Render
 async function renderTodaysBiggestHits() {
   const container = document.querySelector(".hits-grid");
   if (!container) return;
@@ -391,9 +392,10 @@ async function renderPopularArtists() {
   if (POPULAR.length) updateArtistHero(POPULAR[0]); // auto fill hero
 }
 
-// Boot
 document.addEventListener("DOMContentLoaded", () => {
   // gọi cùng lúc, không chờ nhau
   renderTodaysBiggestHits();
   renderPopularArtists();
 });
+
+window.location.href = `details.html?artistId=${encodeURIComponent(artistId)}`;
