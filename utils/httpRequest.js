@@ -34,6 +34,7 @@ class HttpRequest {
             return response;
         } catch (error) {
             console.error('Error in HTTP request:', error);
+            throw error; // Re-throw the error so it can be caught by the caller
         }
     }
 

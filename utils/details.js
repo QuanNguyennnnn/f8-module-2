@@ -1,47 +1,83 @@
 // details.js
-import httpRequest from "./utils/httpRequest.js";
-import endpoints from "./utils/endpoints.js";
-import toast from "./utils/toast.js";
+import httpRequest from "./httpRequest.js";
+import endpoints from "./endpoints.js";
+import toast from "./toast.js";
 
 // Ghép URL endpoint an toàn (tuỳ code endpoints của bạn)
-const artistDetailUrl = (id) => {
-  if (typeof endpoints.artistById === "function") return endpoints.artistById(id);
-  if (typeof endpoints.artistsById === "function") return endpoints.artistsById(id);
-  return `${endpoints.artists}/${id}`;
+const getDetailUrl = (type, id) => {
+  if (type === 'artist') {
+    if (typeof endpoints.artistById === "function") return endpoints.artistById(id);
+    if (typeof endpoints.artistsById === "function") return endpoints.artistsById(id);
+    return `${endpoints.artists}/${id}`;
+  } else if (type === 'playlist') {
+    if (typeof endpoints.playlistsById === "function") return endpoints.playlistsById(id);
+    return `${endpoints.playlists}/${id}`;
+  }
+  return '';
 };
-const artistTopTracksUrl = (id) => {
-  if (typeof endpoints.artistTopTracks === "function") return endpoints.artistTopTracks(id);
-  return `${endpoints.artists}/${id}/top-tracks`;
+
+const getTracksUrl = (type, id) => {
+  if (type === 'artist') {
+    if (typeof endpoints.artistTopTracks === "function") return endpoints.artistTopTracks(id);
+    return `${endpoints.artists}/${id}/top-tracks`;
+  } else if (type === 'playlist') {
+    return `${endpoints.playlists}/${id}/tracks`;
+  }
+  return '';
 };
 
 const toHttps = (u) => (typeof u === "string" ? u.replace(/^http:\/\//i, "https://") : u);
 
-function updateArtistHero(a) {
-  if (!a) return;
-  const name = document.querySelector(".artist-name");
-  const mons = document.querySelector(".monthly-listeners");
-  if (name) name.textContent = a.name || "Unknown Artist";
-  if (mons) mons.textContent = `${Number(a.monthly_listeners || 0).toLocaleString("en-US")} monthly listeners`;
+function updateHeroSection(data, type) {
+  if (!data) return;
+  const nameEl = document.querySelector(".hero-name");
+  const typeEl = document.querySelector(".hero-type");
+  const statsEl = document.querySelector(".hero-stats");
+  const descEl = document.querySelector(".hero-description");
 
-  const url = toHttps(a.background_image_url || a.image_url) || "placeholder.svg";
-  const heroBg = document.querySelector(".artist-hero");
+  if (type === 'artist') {
+    if (nameEl) nameEl.textContent = data.name || "Unknown Artist";
+    if (typeEl) typeEl.textContent = "Verified Artist";
+    if (statsEl) statsEl.textContent = `${Number(data.monthly_listeners || 0).toLocaleString("en-US")} monthly listeners`;
+    if (descEl) descEl.textContent = ''; // Clear description for artists
+  } else if (type === 'playlist') {
+    if (nameEl) nameEl.textContent = data.name || "Unknown Playlist";
+    if (typeEl) typeEl.textContent = `Playlist by ${data.owner?.display_name || 'Unknown'}`;
+    if (statsEl) statsEl.textContent = `${Number(data.followers?.total || 0).toLocaleString("en-US")} followers, ${Number(data.tracks?.total || 0).toLocaleString("en-US")} songs`;
+    if (descEl) descEl.textContent = data.description || '';
+  }
+
+  const url = toHttps(data.background_image_url || data.image_url || data.images?.[0]?.url) || "placeholder.svg";
+  const heroBg = document.querySelector(".details-hero");
   if (heroBg) heroBg.style.backgroundImage = `url("${url}")`;
   const heroImg = document.querySelector(".hero-image");
-  if (heroImg) { heroImg.src = url; heroImg.alt = a.name || "Artist"; }
+  if (heroImg) { heroImg.src = url; heroImg.alt = data.name || (type === 'artist' ? "Artist" : "Playlist"); }
 }
 
-function renderArtistTopTracks(topTracks) {
-  const list = document.querySelector(".popular-section .track-list");
-  if (!list) return;
+function renderTracks(tracksData, type) {
+  const list = document.querySelector(".track-section .track-list");
+  const sectionTitle = document.querySelector(".track-section .section-title");
+  if (!list || !sectionTitle) return;
+
   list.innerHTML = "";
-  const tracks = Array.isArray(topTracks?.items) ? topTracks.items : (topTracks || []);
-  tracks.forEach((t, i) => list.appendChild(createTrackRow(t, i + 1)));
+  const tracks = Array.isArray(tracksData?.items) ? tracksData.items : (Array.isArray(tracksData?.tracks) ? tracksData.tracks : (tracksData || []));
+  if (type === 'playlist') {
+    sectionTitle.textContent = "Songs";
+    tracks.forEach((item, i) => {
+      if (item && item.track) {
+        list.appendChild(createTrackRow(item.track, i + 1));
+      }
+    });
+  } else {
+    sectionTitle.textContent = "Popular";
+    tracks.forEach((t, i) => list.appendChild(createTrackRow(t, i + 1)));
+  }
 }
 
 function createTrackRow(t, index) {
   const wrap = document.createElement("div");
   wrap.className = "track-item";
-  const img = t.thumbnail || t.image || t.album?.images?.[0]?.url || "placeholder.svg?height=40&width=40";
+  const img = t.thumbnail || t.image || t.album?.images?.[0]?.url || t.images?.[0]?.url || "placeholder.svg?height=40&width=40";
   const name = t.name || t.title || "Unknown";
   const plays = t.playCount || t.play_count || t.streams || 0;
   const durationMs = t.duration_ms ?? t.duration ?? 0;
@@ -63,24 +99,85 @@ function formatDuration(ms) {
   return `${m}:${s}`;
 }
 
-async function loadArtist() {
+let detailType = '';
+let detailId = '';
+let isFollowing = false;
+const followBtn = document.querySelector(".follow-btn");
+
+async function checkFollowStatus() {
+  if (detailType !== 'playlist' || !detailId) return;
+  try {
+    const response = await httpRequest.get(`${endpoints.playlists}/${detailId}/followers/contains?ids=${localStorage.getItem('userId')}`);
+    isFollowing = response[0];
+    updateFollowButton();
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+  }
+}
+
+function updateFollowButton() {
+  if (!followBtn) return;
+  if (isFollowing) {
+    followBtn.innerHTML = '<i class="fa-solid fa-heart"></i> Unfollow';
+    followBtn.classList.add('following');
+  } else {
+    followBtn.innerHTML = '<i class="fa-regular fa-heart"></i> Follow';
+    followBtn.classList.remove('following');
+  }
+}
+
+async function toggleFollow() {
+  if (detailType !== 'playlist' || !detailId) return;
+
+  try {
+    if (isFollowing) {
+      await httpRequest.delete(endpoints.playlistUnfollow(detailId));
+      toast && toast({ text: "Playlist unfollowed!", type: "success" });
+    } else {
+      await httpRequest.post(endpoints.playlistFollow(detailId));
+      toast && toast({ text: "Playlist followed!", type: "success" });
+    }
+    isFollowing = !isFollowing;
+    updateFollowButton();
+  } catch (error) {
+    console.error("Error toggling follow status:", error);
+    toast && toast({ text: "Failed to update follow status.", type: "error" });
+  }
+}
+
+async function loadDetails() {
   const params = new URLSearchParams(window.location.search);
   const artistId = params.get("artistId");
-  if (!artistId) {
-    // Không có id → quay về Home
+  const playlistId = params.get("playlistId");
+
+  if (artistId) {
+    detailType = 'artist';
+    detailId = artistId;
+  } else if (playlistId) {
+    detailType = 'playlist';
+    detailId = playlistId;
+  } else {
     window.location.replace("index.html");
     return;
   }
+
+  if (detailType === 'playlist') {
+    if (followBtn) followBtn.style.display = 'inline-block';
+    checkFollowStatus();
+  } else {
+    if (followBtn) followBtn.style.display = 'none';
+  }
+
   try {
-    const [artist, topTracks] = await Promise.all([
-      httpRequest.get(artistDetailUrl(artistId)),
-      httpRequest.get(artistTopTracksUrl(artistId)),
+    const [details, tracksData] = await Promise.all([
+      httpRequest.get(getDetailUrl(detailType, detailId)),
+      httpRequest.get(getTracksUrl(detailType, detailId)),
     ]);
-    updateArtistHero(artist);
-    renderArtistTopTracks(topTracks);
+    updateHeroSection(details, detailType);
+    renderTracks(tracksData, detailType);
   } catch (error) {
     console.error(error);
-    toast && toast({ text: "Không tải được dữ liệu nghệ sĩ.", type: "error" });
+    toast && toast({ text: `Không tải được dữ liệu ${detailType === 'artist' ? 'nghệ sĩ' : 'playlist'}.`, type: "error" });
   }
 }
 
@@ -88,6 +185,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Nút Home → về index.html (giữ đúng bố cục ban đầu)
   const homeBtn = document.querySelector(".home-btn");
   if (homeBtn) homeBtn.addEventListener("click", () => { window.location.href = "index.html"; });
+
+  if (followBtn) followBtn.addEventListener("click", toggleFollow);
+
   // Tải dữ liệu chi tiết
-  loadArtist();
+  loadDetails();
 });

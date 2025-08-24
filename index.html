@@ -138,7 +138,7 @@
 
             <div class="content-wrapper">
                 <!-- Today's Biggest Hits Section -->
-                <section class="hits-section">
+                <section class="hits-section" id="hits-section">
                     <div class="section-header">
                         <h2 class="section-heading">
                             Today's biggest hits
@@ -230,7 +230,7 @@
                 </section>
 
                 <!-- Popular Artists Section -->
-                <section class="artists-section">
+                <section class="artists-section" id="artists-section">
                     <div class="section-header">
                         <h2 class="section-heading">Popular artists</h2>
                     </div>
@@ -309,7 +309,7 @@
                 </section>
 
                 <!-- Artist Hero Section -->
-                <section class="artist-hero">
+                <section class="artist-hero" id="artist-details-section" style="display: none;">
                     <div class="hero-background">
                         <img src="placeholder.svg" alt="Đen artist background" class="hero-image" />
                         <div class="hero-overlay"></div>
@@ -327,14 +327,14 @@
                 </section>
 
                 <!-- Artist Controls -->
-                <section class="artist-controls">
+                <section class="artist-controls" id="artist-controls-section" style="display: none;">
                     <button class="play-btn-large">
                         <i class="fas fa-play"></i>
                     </button>
                 </section>
 
                 <!-- Popular Tracks -->
-                <section class="popular-section">
+                <section class="popular-section" id="popular-tracks-section" style="display: none;">
                     <h2 class="section-title">Popular</h2>
                     <div class="track-list">
                         <div class="track-item">
@@ -549,6 +549,43 @@
                             Sign up here
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Details Modal -->
+    <div class="modal-overlay" id="editDetailsModal" style="display: none;">
+        <div class="modal-container">
+            <button class="modal-close" id="editDetailsModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-content">
+                <h1 class="modal-heading">Edit details</h1>
+                <div class="edit-details-form">
+                    <div class="form-group image-upload-group">
+                        <div class="image-placeholder">
+                            <img id="playlistImagePreview" src="placeholder.svg?height=160&width=160" alt="Playlist Cover" />
+                            <button class="choose-photo-btn" id="choosePhotoButton">
+                                <i class="fas fa-pencil-alt"></i>
+                                <span>Choose photo</span>
+                            </button>
+                            <input type="file" id="playlistImageInput" accept="image/*" style="display: none;" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="My Playlist #3" class="form-input" id="playlistNameInput" />
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="Add an optional description" class="form-input" id="playlistDescriptionInput"></textarea>
+                    </div>
+                    <button class="auth-submit-btn" id="savePlaylistDetailsBtn">
+                        Save
+                    </button>
+                    <p class="modal-disclaimer">
+                        By proceeding, you agree to give Spotify access to the image you choose to upload.
+                        Please make sure you have the right to upload the image.
+                    </p>
                 </div>
             </div>
         </div>
