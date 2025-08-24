@@ -290,6 +290,50 @@ function updateCurrentUser(user) {
     }
 }
 
+// Helper function to create a sidebar playlist item
+function createMyPlaylistItem(playlist) {
+    const currentUser = getItemStorage("currentUser");
+    const isOwner = currentUser && playlist.owner?.id === currentUser.id;
+
+    const playlistItem = document.createElement("div");
+    playlistItem.className = "library-item";
+    playlistItem.dataset.playlistId = playlist.id;
+    playlistItem.innerHTML = `
+        <img src="${imgOrPlaceholder(playlist.image_url, 48)}" alt="${safeText(playlist.name)}" class="item-image" />
+        <div class="item-info">
+            <div class="item-title">${safeText(playlist.name)}</div>
+            <div class="item-subtitle">Playlist • ${safeText(playlist.owner?.display_name || playlist.owner_name, "Unknown")}</div>
+        </div>
+        ${isOwner ? `<button class="delete-playlist-btn" data-playlist-id="${playlist.id}"><i class="fas fa-trash"></i></button>` : ''}
+    `;
+
+    playlistItem.addEventListener("click", (event) => {
+        // Only navigate if not clicking the delete button
+        if (!event.target.closest('.delete-playlist-btn')) {
+            window.location.href = `details.html?playlistId=${playlist.id}`;
+        }
+    });
+
+    // Add event listener for delete button if it exists
+    const deleteBtn = playlistItem.querySelector('.delete-playlist-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", async (event) => {
+            event.stopPropagation(); // Prevent navigating to details page
+            if (confirm(`Are you sure you want to delete the playlist "${safeText(playlist.name)}"?`)) {
+                try {
+                    await httpRequest.delete(endpoints.playlistDelete(playlist.id));
+                    toast({ text: "Playlist deleted successfully!", type: "success" });
+                    renderMyPlaylists(); // Re-render sidebar
+                } catch (error) {
+                    console.error("Error deleting playlist:", error);
+                    toast({ text: `Failed to delete playlist: ${error.message || "Unknown error"}`, type: "error" });
+                }
+            }
+        });
+    }
+    return playlistItem;
+}
+
 // Render user's playlists in the sidebar
 async function renderMyPlaylists() {
     const libraryContent = document.querySelector(".library-content");
@@ -303,19 +347,7 @@ async function renderMyPlaylists() {
         libraryContent.querySelectorAll('.library-item[data-playlist-id]').forEach(item => item.remove());
 
         playlistsToRender.forEach(playlist => {
-            const playlistItem = document.createElement("div");
-            playlistItem.className = "library-item";
-            playlistItem.dataset.playlistId = playlist.id;
-            playlistItem.innerHTML = `
-                <img src="${imgOrPlaceholder(playlist.image_url, 48)}" alt="${safeText(playlist.name)}" class="item-image" />
-                <div class="item-info">
-                    <div class="item-title">${safeText(playlist.name)}</div>
-                    <div class="item-subtitle">Playlist • ${safeText(playlist.owner?.display_name || playlist.owner_name, "Unknown")}</div>
-                </div>
-            `;
-            playlistItem.addEventListener("click", () => {
-                window.location.href = `details.html?playlistId=${playlist.id}`;
-            });
+            const playlistItem = createMyPlaylistItem(playlist);
             libraryContent.appendChild(playlistItem);
         });
     } catch (error) {
@@ -528,15 +560,15 @@ async function fetchArtists(limit = 20, offset = 0) {
 }
 
 // Render
-async function renderTodaysBiggestHits() {
-  const container = document.querySelector(".hits-grid");
-  if (!container) return;
+// async function renderTodaysBiggestHits() {
+//   const container = document.querySelector(".hits-grid");
+//   if (!container) return;
 
-  container.innerHTML = ""; // clear mẫu tĩnh
-  const playlists = await fetchPlaylists(20, 0);
-  // Lấy 6 cái đầu để đúng layout như ảnh yêu cầu
-  playlists.slice(0, 6).forEach((pl) => container.appendChild(createHitCard(pl)));
-}
+//   container.innerHTML = ""; // clear mẫu tĩnh
+//   const playlists = await fetchPlaylists(20, 0);
+//   // Lấy 6 cái đầu để đúng layout như ảnh yêu cầu
+//   playlists.slice(0, 6).forEach((pl) => container.appendChild(createHitCard(pl)));
+// }
 
 let POPULAR = [];
 async function renderPopularArtists() {
@@ -550,7 +582,7 @@ async function renderPopularArtists() {
 
 document.addEventListener("DOMContentLoaded", () => {
   // gọi cùng lúc, không chờ nhau
-  renderTodaysBiggestHits();
+  // renderTodaysBiggestHits(); // Tạm thời comment do lỗi 404
   renderPopularArtists();
 
   // Get DOM elements for sections

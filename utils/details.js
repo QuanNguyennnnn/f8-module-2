@@ -105,11 +105,20 @@ let isFollowing = false;
 const followBtn = document.querySelector(".follow-btn");
 
 async function checkFollowStatus() {
-  if (detailType !== 'playlist' || !detailId) return;
+  if (!detailId) return;
+  const userId = localStorage.getItem('userId');
+  if (!userId) return; // Cannot check follow status without userId
   try {
-    const response = await httpRequest.get(`${endpoints.playlists}/${detailId}/followers/contains?ids=${localStorage.getItem('userId')}`);
+    let response;
+    if (detailType === 'playlist') {
+      response = await httpRequest.get(`${endpoints.playlists}/${detailId}/followers/contains?ids=${userId}`);
+    } else if (detailType === 'artist') {
+      response = await httpRequest.get(`${endpoints.artists}/${detailId}/followers/contains?ids=${userId}`);
+    }
+    if (response) {
     isFollowing = response[0];
     updateFollowButton();
+    }
   } catch (error) {
     console.error("Error checking follow status:", error);
   }
@@ -127,15 +136,25 @@ function updateFollowButton() {
 }
 
 async function toggleFollow() {
-  if (detailType !== 'playlist' || !detailId) return;
+  if (!detailId) return;
 
   try {
     if (isFollowing) {
-      await httpRequest.delete(endpoints.playlistUnfollow(detailId));
-      toast && toast({ text: "Playlist unfollowed!", type: "success" });
+      if (detailType === 'playlist') {
+        await httpRequest.delete(endpoints.playlistUnfollow(detailId));
+        toast && toast({ text: "Playlist unfollowed!", type: "success" });
+      } else if (detailType === 'artist') {
+        await httpRequest.delete(endpoints.artistUnfollow(detailId));
+        toast && toast({ text: "Artist unfollowed!", type: "success" });
+      }
     } else {
-      await httpRequest.post(endpoints.playlistFollow(detailId));
-      toast && toast({ text: "Playlist followed!", type: "success" });
+      if (detailType === 'playlist') {
+        await httpRequest.post(endpoints.playlistFollow(detailId));
+        toast && toast({ text: "Playlist followed!", type: "success" });
+      } else if (detailType === 'artist') {
+        await httpRequest.put(endpoints.artistFollow(detailId)); // Artist follow uses PUT
+        toast && toast({ text: "Artist followed!", type: "success" });
+      }
     }
     isFollowing = !isFollowing;
     updateFollowButton();
@@ -161,11 +180,14 @@ async function loadDetails() {
     return;
   }
 
-  if (detailType === 'playlist') {
-    if (followBtn) followBtn.style.display = 'inline-block';
-    checkFollowStatus();
-  } else {
-    if (followBtn) followBtn.style.display = 'none';
+  // Show/hide follow button based on type
+  if (followBtn) {
+    if (detailType === 'playlist' || detailType === 'artist') {
+      followBtn.style.display = 'inline-block';
+      checkFollowStatus();
+    } else {
+      followBtn.style.display = 'none';
+    }
   }
 
   try {
